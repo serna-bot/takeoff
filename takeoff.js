@@ -8,22 +8,24 @@ export class Takeoff extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
+        this.offset = 0;
+        this.engine = false;
+        this.reset = false;
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
-            torus: new defs.Torus(15, 15),
-            torus2: new defs.Torus(3, 15),
-            sphere: new defs.Subdivision_Sphere(4),
-            circle: new defs.Regular_2D_Polygon(1, 15),
+            //our shapes
+            helicopter: new defs.Helicopter(),
+            main_rotor: new defs.Rotor(),
         };
 
         // *** Materials
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
-            test2: new Material(new Gouraud_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
-            ring: new Material(new Ring_Shader()),
+                {ambient: .8, diffusivity: .6, color: hex_color("#808080")}),
+            //our materials
+            rotor: new Material(new defs.Phong_Shader(),
+                {ambient: .8, diffusivity: .6, color: hex_color("#3A3B3C")}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -31,15 +33,15 @@ export class Takeoff extends Scene {
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        // this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
-        // this.new_line();
-        // this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
-        // this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
-        // this.new_line();
-        // this.key_triggered_button("Attach to planet 3", ["Control", "3"], () => this.attached = () => this.planet_3);
-        // this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
-        // this.new_line();
-        // this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
+        this.key_triggered_button("TAKEOFF!", ["Control", "0"], () => {
+            this.engine = true;
+            this.reset = true;
+            });
+        this.new_line();
+        this.key_triggered_button("STOP!", ["Control", "1"], () => {
+            this.engine = false;
+            });
+            
     }
 
     display(context, program_state) {
@@ -54,20 +56,28 @@ export class Takeoff extends Scene {
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
-        // TODO: Create Planets (Requirement 1)
-        // this.shapes.[XXX].draw([XXX]) // <--example
-
         // TODO: Lighting (Requirement 2)
-        
-        const light_position = vec4(0, 0, 0, 1);
+        const light_position = vec4(0, 0, 0, -10);
         // The parameters of the Light are: position, color, size
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
-        // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
-        const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
-        // const yellow = hex_color("#fac91a");
+        //draw our helicopter
         let model_transform = Mat4.identity();
-        this.shapes.sphere.draw(context, program_state, model_transform, this.materials.test);
+        this.shapes.helicopter.draw(context, program_state, model_transform, this.materials.test);
+        //reset time for when rotor starts
+        if (this.reset) {
+            this.offset = program_state.animation_time;
+            this.reset = false;
+        }
+        const t = (program_state.animation_time - this.offset) / 1000;
+        //draw our rotor
+        const speed = 25 / (1 + Math.exp(-.5 * (t - 5))); //logistic growth
+        let rotor_transform = Mat4.identity();
+        if (this.engine) {
+            rotor_transform = rotor_transform.times(Mat4.rotation(speed*t, 0, 1, 0));
+        }
+        rotor_transform = rotor_transform.times(Mat4.translation(0, 2.2, 0));
+        this.shapes.main_rotor.draw(context, program_state, rotor_transform, this.materials.rotor);
     }
 }
 
