@@ -1,7 +1,7 @@
 import {defs, tiny} from './examples/common.js';
 
 const {
-    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
+    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Texture, Material, Scene,
 } = tiny;
 
 export class Takeoff extends Scene {
@@ -14,21 +14,45 @@ export class Takeoff extends Scene {
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
+            torus: new defs.Torus(15, 15),
+            torus2: new defs.Torus(3, 15),
+            sphere: new defs.Subdivision_Sphere(4),
+            circle: new defs.Regular_2D_Polygon(1, 15),
+
             //our shapes
             helicopter: new defs.Helicopter(),
             main_rotor: new defs.Rotor(),
+            ground: new defs.Square(),
+            building: new defs.Cube()
+
         };
 
+        this.shapes.building.arrays.texture_coord.forEach(p => p.scale_by(2));
+
+        this.scratchpad = document.createElement('canvas');
+        // A hidden canvas for re-sizing the real canvas to be square:
+        this.scratchpad_context = this.scratchpad.getContext('2d');
+        this.scratchpad.width = 256;
+        this.scratchpad.height = 256;                // Initial image source: Blank gif file:
+        this.texture = new Texture("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
+
+        const bump = new defs.Fake_Bump_Map(1);
         // *** Materials
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
                 {ambient: .8, diffusivity: .6, color: hex_color("#808080")}),
+            test2: new Material(new Gouraud_Shader(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
+            ring: new Material(new Ring_Shader()),
+
             //our materials
             rotor: new Material(new defs.Phong_Shader(),
                 {ambient: .8, diffusivity: .6, color: hex_color("#3A3B3C")}),
+            building: new Material(bump,
+                {ambient: .5, texture: new Texture("/assets/building.png")})
         }
 
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0.5, 0, 50), vec3(0, 0, 0), vec3(0, 1, 0));
     }
 
     make_control_panel() {
@@ -42,6 +66,33 @@ export class Takeoff extends Scene {
             this.engine = false;
             });
             
+    }
+
+    draw_env(context, program_state, model_transform) {
+        
+
+        // loop start form the left bottom corner of the ground and create a loop.
+
+        // for now have one large intersection in the middle, two smaller streets x and y
+
+        // so we have multiple square lots, fill them with buildings all of the same size for now
+
+        //look into mapping an image onto the shapes for the materials
+
+        for (let i = -20; i < 21; i++) {
+            for (let j = -20; j < 21; j++) {
+                if (i % 4 == 0 || j % 4 == 0 || (i + 1) % 4 == 0 || (j+1) % 4 == 0 ) continue;
+                let building_model_transform = model_transform;
+                building_model_transform = building_model_transform
+                    .times(Mat4.translation(i * 5, 0, j * 5))
+                    .times(Mat4.scale(2, 10, 2));
+                this.shapes.building.draw(context, program_state, building_model_transform, this.materials.building);
+            }
+        }
+
+
+        let ground_model_transform = model_transform;
+        this.shapes.ground.draw(context, program_state, ground_model_transform.times(Mat4.translation(0, -10, 0)).times(Mat4.scale(100, 100, 100)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.test);
     }
 
     display(context, program_state) {
@@ -63,6 +114,9 @@ export class Takeoff extends Scene {
 
         //draw our helicopter
         let model_transform = Mat4.identity();
+        
+        this.draw_env(context, program_state, model_transform);
+        
         this.shapes.helicopter.draw(context, program_state, model_transform, this.materials.test);
         //reset time for when rotor starts
         if (this.reset) {
