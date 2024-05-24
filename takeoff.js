@@ -50,7 +50,9 @@ export class Takeoff extends Scene {
             rotor: new Material(new defs.Phong_Shader(),
                 {ambient: .8, diffusivity: .6, color: hex_color("#3A3B3C")}),
             building: new Material(bump,
-                {ambient: .5, texture: new Texture("/assets/building.png")})
+                {ambient: .5, texture: new Texture("/assets/building.png")}),
+            helicopter: new Material(new defs.Phong_Shader(),
+                {ambient: .8, diffusivity: .6, color: hex_color("#636363")}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0.5, 0, 50), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -157,8 +159,10 @@ export class Takeoff extends Scene {
 
         // TODO: Lighting (Requirement 2)
         const light_position = vec4(0, 100, 0, -10);
+        const still_light = vec4(-3, -6, -9, 2);
         // The parameters of the Light are: position, color, size
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000000)];
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000000), new Light(still_light, color(1, 1, 1, 1), 1000)];
+
 
         const dt = program_state.animation_delta_time / 1000;
 
@@ -170,15 +174,26 @@ export class Takeoff extends Scene {
         this.draw_env(context, program_state, Mat4.identity());
         
         let model_transform = body_transform;
-        this.shapes.helicopter.draw(context, program_state, model_transform, this.materials.test);
+        this.shapes.helicopter.draw(context, program_state, model_transform, this.materials.helicopter);
         //reset time for when rotor starts
         if (this.reset) {
             this.offset = program_state.animation_time;
             this.reset = false;
         }
         const t = (program_state.animation_time - this.offset) / 1000;
-        //draw our rotor
+
         const speed = 25 / (1 + Math.exp(-.5 * (t - 5))); //logistic growth
+        //still helicopter for demo
+        let still_transform = Mat4.identity();
+        still_transform = still_transform.times(Mat4.translation(-3, -6, -5));
+        this.shapes.helicopter.draw(context, program_state, still_transform, this.materials.helicopter);
+        if (this.engine) {
+            still_transform = still_transform.times(Mat4.rotation(speed*t, 0, 1, 0));
+        }
+        still_transform = still_transform.times(Mat4.translation(0, 2.2, 0));
+        this.shapes.main_rotor.draw(context, program_state, still_transform, this.materials.rotor);
+        
+        //draw our rotor
         let rotor_transform = body_transform;
         rotor_transform = rotor_transform.times(Mat4.rotation(this.helicopter_physics.main_rotor_power / 1e5 * t, 0, 1, 0));
         rotor_transform = rotor_transform.times(Mat4.translation(0, 2.2, 0));
