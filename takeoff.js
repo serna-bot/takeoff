@@ -70,6 +70,18 @@ export class Takeoff extends Scene {
                 case "l":
                     this.helicopter_physics.rotate_right();
                     break;
+                case "w":
+                    this.helicopter_physics.tilt_fb = -15;
+                    break;
+                case "s":
+                    this.helicopter_physics.tilt_fb = 15;
+                    break;
+                case "a":
+                    this.helicopter_physics.tilt_lr = 15;
+                    break;
+                case "d":
+                    this.helicopter_physics.tilt_lr = -15;
+                    break;
             }
         });
 
@@ -81,6 +93,15 @@ export class Takeoff extends Scene {
                 case "j":
                 case "l":
                     this.helicopter_physics.stop_rotate();
+                    break;
+                case "w":
+                case "s":
+                    this.helicopter_physics.tilt_fb = 0;
+                    break;
+                case "a":
+                case "d":
+                    this.helicopter_physics.tilt_lr = 0;
+                    break;
             }
         });
     }
@@ -134,13 +155,14 @@ export class Takeoff extends Scene {
         }
 
         program_state.projection_transform = Mat4.perspective(
-            Math.PI / 4, context.width / context.height, .1, 1000);
+            Math.PI / 4, context.width / context.height, .1, 100000);
 
         // TODO: Lighting (Requirement 2)
-        const light_position = vec4(0, 0, 0, -10);
+        const light_position = vec4(0, 100, 0, -10);
         const still_light = vec4(-3, -6, -9, 2);
         // The parameters of the Light are: position, color, size
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000), new Light(still_light, color(1, 1, 1, 1), 1000)];
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000000), new Light(still_light, color(1, 1, 1, 1), 1000)];
+
 
         const dt = program_state.animation_delta_time / 1000;
 
@@ -173,7 +195,7 @@ export class Takeoff extends Scene {
         
         //draw our rotor
         let rotor_transform = body_transform;
-        rotor_transform = rotor_transform.times(Mat4.rotation(this.helicopter_physics.engine_power / 1e5 * t, 0, 1, 0));
+        rotor_transform = rotor_transform.times(Mat4.rotation(this.helicopter_physics.main_rotor_power / 1e5 * t, 0, 1, 0));
         rotor_transform = rotor_transform.times(Mat4.translation(0, 2.2, 0));
         this.shapes.main_rotor.draw(context, program_state, rotor_transform, this.materials.rotor);
     }

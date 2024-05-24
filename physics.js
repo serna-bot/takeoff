@@ -36,8 +36,8 @@ class Physics {
         const w_norm = this.w.norm();
         if (w_norm > 0) {
             this.r = this.r.times(Mat4.rotation(w_norm * dt, ...this.w));
-            this.w = this.w.plus(this.t.times(dt / this.m));
         }
+        this.w = this.w.plus(this.t.times(dt / this.m));
     }
 
     get_transform() {
@@ -54,36 +54,58 @@ export class HelicopterPhysics extends Physics {
     constructor() {
         super(5e3, zero3, zero3, zero3, Mat4.identity(), zero3, zero3);
 
-        this.engine_power = 0;
+        this.engine_power = 2.4e6;
+        this.f_lift_max = 1e5;
+        this.f_rot_max = 1e4;
+        this.air_res = 100;
+
+        this.main_rotor_power = 0;
+        this.tail_rotor_power = 0;
+        
+        this.tilt_lr = 0;
+        this.tilt_fb = 0;
     }
 
     prop_on() {
-        this.engine_power = 2.4e6;
+        this.main_rotor_power = this.engine_power;
     }
 
     prop_off() {
-        this.engine_power = 0;
+        this.main_rotor_power = 0;
     }
 
     rotate_left() {
-        this.w = vec3(0, 0.5, 0);
+        this.tail_rotor_power = 0.1 * this.engine_power;
     }
 
     rotate_right() {
-        this.w = vec3(0, -0.5, 0);
+        this.tail_rotor_power = -0.1 * this.engine_power;
     }
 
     stop_rotate() {
-        this.w = zero3;
+        this.tail_rotor_power = 0;
     }
 
     update(dt) {
-        const gravity = vec3(0, -10 * this.m, 0);
-        const vy = Math.max(Math.abs(this.v[1]), 1);
-        const F_ENGINE_MAX = 1e5;
-        const f_engine = Math.min(this.engine_power / vy, F_ENGINE_MAX);
-        const f_lift = vec3(0, f_engine, 0);
-        this.f = gravity.plus(f_lift);
+        const f_g = vec3(0, -10 * this.m, 0);
+
+        const tilt = Mat4.rotation(this.tilt_fb * Math.PI / 180, 1, 0, 0)
+            .times(Mat4.rotation(this.tilt_lr * Math.PI / 180, 0, 0, 1));
+
+        const vy = Math.abs(this.v[1]);
+        const lift_mag = Math.min(this.main_rotor_power / vy, this.f_lift_max) || 0;
+        const f_lift = this.r.times(tilt).times(vec3(0, lift_mag, 0));
+
+        const f_drag = this.v.times(-this.air_res * this.v.norm());
+
+        const wy = this.w[1];
+        const f_rot = Math.max(Math.min(this.tail_rotor_power / Math.abs(wy), this.f_rot_max), -this.f_rot_max) || 0;
+
+        const f_rot_drag = -Math.sign(wy) * 100 * this.air_res * wy * wy;
+
+        this.f = f_g.plus(f_lift).plus(f_drag);
+        this.t = vec3(0, f_rot + f_rot_drag, 0);
+
         super.update(dt);
     }
 }
