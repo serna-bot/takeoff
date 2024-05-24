@@ -132,12 +132,12 @@ export class Takeoff extends Scene {
         }
 
         program_state.projection_transform = Mat4.perspective(
-            Math.PI / 4, context.width / context.height, .1, 1000);
+            Math.PI / 4, context.width / context.height, .1, 100000);
 
         // TODO: Lighting (Requirement 2)
-        const light_position = vec4(0, 0, 0, -10);
+        const light_position = vec4(0, 100, 0, -10);
         // The parameters of the Light are: position, color, size
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000000)];
 
         const dt = program_state.animation_delta_time / 1000;
 
@@ -159,7 +159,7 @@ export class Takeoff extends Scene {
         //draw our rotor
         const speed = 25 / (1 + Math.exp(-.5 * (t - 5))); //logistic growth
         let rotor_transform = body_transform;
-        rotor_transform = rotor_transform.times(Mat4.rotation(this.helicopter_physics.engine_power / 1e5 * t, 0, 1, 0));
+        rotor_transform = rotor_transform.times(Mat4.rotation(this.helicopter_physics.main_rotor_power / 1e5 * t, 0, 1, 0));
         rotor_transform = rotor_transform.times(Mat4.translation(0, 2.2, 0));
         this.shapes.main_rotor.draw(context, program_state, rotor_transform, this.materials.rotor);
     }
