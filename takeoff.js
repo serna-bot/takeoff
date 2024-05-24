@@ -1,4 +1,5 @@
-import {defs, tiny} from './examples/common.js';
+import {defs, tiny} from "./examples/common.js";
+import { HelicopterPhysics } from "./physics.js";
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Texture, Material, Scene,
@@ -53,6 +54,33 @@ export class Takeoff extends Scene {
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0.5, 0, 50), vec3(0, 0, 0), vec3(0, 1, 0));
+
+        this.helicopter_physics = new HelicopterPhysics();
+
+        document.addEventListener("keydown", e => {
+            switch (e.key) {
+                case "k":
+                    this.helicopter_physics.prop_on();
+                    break;
+                case "j":
+                    this.helicopter_physics.rotate_left();
+                    break;
+                case "l":
+                    this.helicopter_physics.rotate_right();
+                    break;
+            }
+        });
+
+        document.addEventListener("keyup", e => {
+            switch (e.key) {
+                case "k":
+                    this.helicopter_physics.prop_off();
+                    break;
+                case "j":
+                case "l":
+                    this.helicopter_physics.stop_rotate();
+            }
+        });
     }
 
     make_control_panel() {
@@ -65,7 +93,6 @@ export class Takeoff extends Scene {
         this.key_triggered_button("STOP!", ["Control", "1"], () => {
             this.engine = false;
             });
-            
     }
 
     draw_env(context, program_state, model_transform) {
@@ -112,11 +139,16 @@ export class Takeoff extends Scene {
         // The parameters of the Light are: position, color, size
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
+        const dt = program_state.animation_delta_time / 1000;
+
+        this.helicopter_physics.update(dt);
+
+        const body_transform = this.helicopter_physics.get_transform();
+
         //draw our helicopter
-        let model_transform = Mat4.identity();
+        this.draw_env(context, program_state, Mat4.identity());
         
-        this.draw_env(context, program_state, model_transform);
-        
+        let model_transform = body_transform;
         this.shapes.helicopter.draw(context, program_state, model_transform, this.materials.test);
         //reset time for when rotor starts
         if (this.reset) {
@@ -126,10 +158,8 @@ export class Takeoff extends Scene {
         const t = (program_state.animation_time - this.offset) / 1000;
         //draw our rotor
         const speed = 25 / (1 + Math.exp(-.5 * (t - 5))); //logistic growth
-        let rotor_transform = Mat4.identity();
-        if (this.engine) {
-            rotor_transform = rotor_transform.times(Mat4.rotation(speed*t, 0, 1, 0));
-        }
+        let rotor_transform = body_transform;
+        rotor_transform = rotor_transform.times(Mat4.rotation(this.helicopter_physics.engine_power / 1e5 * t, 0, 1, 0));
         rotor_transform = rotor_transform.times(Mat4.translation(0, 2.2, 0));
         this.shapes.main_rotor.draw(context, program_state, rotor_transform, this.materials.rotor);
     }
