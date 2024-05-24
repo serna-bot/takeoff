@@ -68,6 +68,18 @@ export class Takeoff extends Scene {
                 case "l":
                     this.helicopter_physics.rotate_right();
                     break;
+                case "w":
+                    this.helicopter_physics.tilt_fb = -15;
+                    break;
+                case "s":
+                    this.helicopter_physics.tilt_fb = 15;
+                    break;
+                case "a":
+                    this.helicopter_physics.tilt_lr = 15;
+                    break;
+                case "d":
+                    this.helicopter_physics.tilt_lr = -15;
+                    break;
             }
         });
 
@@ -79,6 +91,15 @@ export class Takeoff extends Scene {
                 case "j":
                 case "l":
                     this.helicopter_physics.stop_rotate();
+                    break;
+                case "w":
+                case "s":
+                    this.helicopter_physics.tilt_fb = 0;
+                    break;
+                case "a":
+                case "d":
+                    this.helicopter_physics.tilt_lr = 0;
+                    break;
             }
         });
     }
