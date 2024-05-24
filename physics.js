@@ -96,12 +96,11 @@ export class HelicopterPhysics extends Physics {
         const lift_mag = Math.min(this.main_rotor_power / vy, this.f_lift_max) || 0;
         const f_lift = this.r.times(tilt).times(vec3(0, lift_mag, 0));
 
-        console.log(this.v[0]);
-
         const f_drag = this.v.times(-this.air_res * this.v.norm());
 
         const wy = this.w[1];
         const f_rot = Math.max(Math.min(this.tail_rotor_power / Math.abs(wy), this.f_rot_max), -this.f_rot_max) || 0;
+
         const f_rot_drag = -Math.sign(wy) * 100 * this.air_res * wy * wy;
 
         this.f = f_g.plus(f_lift).plus(f_drag);
