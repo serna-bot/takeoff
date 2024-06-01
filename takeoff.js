@@ -1,6 +1,8 @@
 import {defs, tiny} from "./examples/common.js";
 import { HelicopterPhysics } from "./physics.js";
 
+import {getRandomNumber} from './helper.js';
+
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Texture, Material, Scene,
 } = tiny;
@@ -50,14 +52,23 @@ export class Takeoff extends Scene {
             rotor: new Material(new defs.Phong_Shader(),
                 {ambient: .8, diffusivity: .6, color: hex_color("#3A3B3C")}),
             building: new Material(bump,
-                {ambient: .5, texture: new Texture("/assets/building.png")}),
+                {ambient: .5, specularity: 0, texture: new Texture("/assets/building.png")}),
+            building2: new Material(bump,
+                {ambient: .5, specularity: 0, texture: new Texture("/assets/building.jpg")}),
+            building3: new Material(bump,
+                {ambient: .5, specularity: 0, texture: new Texture("/assets/building2.jpg")}),
             helicopter: new Material(new defs.Phong_Shader(),
                 {ambient: .8, diffusivity: .6, color: hex_color("#636363")}),
+            ground: new Material(new defs.Phong_Shader(),
+                {ambient: .5, diffusivity: .1, specularity: 0, color: hex_color("#808080")}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0.5, 0, 50), vec3(0, 0, 0), vec3(0, 1, 0));
 
         this.helicopter_physics = new HelicopterPhysics();
+
+        this.building_scale = Array.from({ length: 3600 }, () => getRandomNumber(3, 1));
+        this.building_material = Array.from({ length: 3600 }, () => getRandomNumber(3, 0, true));
 
         document.addEventListener("keydown", e => {
             switch (e.key) {
@@ -129,20 +140,24 @@ export class Takeoff extends Scene {
 
         //look into mapping an image onto the shapes for the materials
 
-        for (let i = -20; i < 21; i++) {
-            for (let j = -20; j < 21; j++) {
+        const building_materials = [this.materials.building, this.materials.building2, this.materials.building3];
+        let count = 0;
+        for (let i = -60; i < 61; i++) {
+            for (let j = -60; j < 61; j++) {
                 if (i % 4 == 0 || j % 4 == 0 || (i + 1) % 4 == 0 || (j+1) % 4 == 0 ) continue;
                 let building_model_transform = model_transform;
                 building_model_transform = building_model_transform
-                    .times(Mat4.translation(i * 5, 0, j * 5))
-                    .times(Mat4.scale(2, 10, 2));
-                this.shapes.building.draw(context, program_state, building_model_transform, this.materials.building);
+                    .times(Mat4.translation(i * 6, 0, j * 6))
+                    .times(Mat4.scale(2, 10 * this.building_scale[count], 2));
+                let building_material = building_materials[this.building_material[count]];
+                this.shapes.building.draw(context, program_state, building_model_transform, building_material);
+                count++;
             }
         }
 
 
         let ground_model_transform = model_transform;
-        this.shapes.ground.draw(context, program_state, ground_model_transform.times(Mat4.translation(0, -10, 0)).times(Mat4.scale(100, 100, 100)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.test);
+        this.shapes.ground.draw(context, program_state, ground_model_transform.times(Mat4.translation(0, -10, 0)).times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.ground);
     }
 
     display(context, program_state) {
