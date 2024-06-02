@@ -1,5 +1,7 @@
 import {defs, tiny} from "./examples/common.js";
 import { HelicopterPhysics } from "./physics.js";
+import { Shape_From_File } from "./examples/obj-file-demo.js";
+import { heli } from "./helicopter.js";
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Texture, Material, Scene,
@@ -21,10 +23,12 @@ export class Takeoff extends Scene {
             circle: new defs.Regular_2D_Polygon(1, 15),
 
             //our shapes
-            helicopter: new defs.Helicopter(),
-            main_rotor: new defs.Rotor(),
+            helicopter: new heli.Helicopter(),
+            main_rotor: new heli.Rotor(),
             ground: new defs.Square(),
-            building: new defs.Cube()
+            building: new defs.Cube(),
+            helicopter_body: new Shape_From_File("assets/heli_body.obj"),
+            window: new Shape_From_File("assets/window.obj"),
 
         };
 
@@ -48,11 +52,13 @@ export class Takeoff extends Scene {
 
             //our materials
             rotor: new Material(new defs.Phong_Shader(),
-                {ambient: .8, diffusivity: .6, color: hex_color("#3A3B3C")}),
+                {ambient: .8, diffusivity: .6, color: hex_color("#111111")}),
             building: new Material(bump,
                 {ambient: .5, texture: new Texture("/assets/building.png")}),
             helicopter: new Material(new defs.Phong_Shader(),
-                {ambient: .8, diffusivity: .6, color: hex_color("#636363")}),
+                {ambient: .4, diffusivity: .1, specularity: 1.0, color: hex_color("#B0B0B0")}),
+            window: new Material(new defs.Phong_Shader(),
+                {ambient: .1, diffusivity: .1, specularity: .9, color: hex_color("#91b8db")}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0.5, 0, 50), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -116,6 +122,16 @@ export class Takeoff extends Scene {
         this.key_triggered_button("STOP!", ["Control", "1"], () => {
             this.engine = false;
             });
+        this.new_line();
+        this.key_triggered_button("SPIN", ["k"], () => {});
+        this.key_triggered_button("FORWARD", ["w"], () => {});
+        this.new_line();
+        this.key_triggered_button("LEFT", ["a"], () => {});
+        this.key_triggered_button("BACK", ["s"], () => {});
+        this.key_triggered_button("RIGHT", ["d"], () => {});
+        this.new_line();
+        this.key_triggered_button("TURN LEFT", ["j"], () => {});
+        this.key_triggered_button("TURN RIGHT", ["l"], () => {});
     }
 
     draw_env(context, program_state, model_transform) {
@@ -183,20 +199,25 @@ export class Takeoff extends Scene {
         const t = (program_state.animation_time - this.offset) / 1000;
 
         const speed = 25 / (1 + Math.exp(-.5 * (t - 5))); //logistic growth
-        //still helicopter for demo
-        let still_transform = Mat4.identity();
-        still_transform = still_transform.times(Mat4.translation(-3, -6, -5));
-        this.shapes.helicopter.draw(context, program_state, still_transform, this.materials.helicopter);
+
+        //NOTE: HELI HAS 3 PARTS (BODY, WINDOW, ROTOR) WHICH SHOULD BE POSITIONED LIKE BELOW:
+        let still = Mat4.identity().times(Mat4.scale(3,3,3)) //set body scale and position
+                                   .times(Mat4.translation(0, -2.8, 0));
+        this.shapes.helicopter_body.draw(context, program_state, still, this.materials.helicopter);
+        let still_window = still.times(Mat4.translation(.04, .8, -.5)) //position window relative to body
+                                .times(Mat4.scale(.45, .45, .45));
+        this.shapes.window.draw(context, program_state, still_window, this.materials.window);
+        let still_rotor = still.times(Mat4.translation(0, 1.6, .4)); //position rotor relative to body
         if (this.engine) {
-            still_transform = still_transform.times(Mat4.rotation(speed*t, 0, 1, 0));
+            still_rotor = still_rotor.times(Mat4.rotation(speed*t, 0, 1, 0));
         }
-        still_transform = still_transform.times(Mat4.translation(0, 2.2, 0));
-        this.shapes.main_rotor.draw(context, program_state, still_transform, this.materials.rotor);
-        
+        this.shapes.main_rotor.draw(context, program_state, still_rotor, this.materials.rotor);
+
         //draw our rotor
         let rotor_transform = body_transform;
         rotor_transform = rotor_transform.times(Mat4.rotation(this.helicopter_physics.main_rotor_power / 1e5 * t, 0, 1, 0));
         rotor_transform = rotor_transform.times(Mat4.translation(0, 2.2, 0));
+        rotor_transform = rotor_transform.times(Mat4.scale(3,3,3));
         this.shapes.main_rotor.draw(context, program_state, rotor_transform, this.materials.rotor);
     }
 }
