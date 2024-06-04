@@ -80,8 +80,8 @@ export class Takeoff extends Scene {
         for (let i = -60; i < 61; i++) {
             for (let j = -60; j < 61; j++) {
                 if (i % 4 == 0 || j % 4 == 0 || (i + 1) % 4 == 0 || (j+1) % 4 == 0 ) continue;
-                let coord = [i * 6, 0, j * 6];
-                let scale = [2, 10 * getRandomNumber(3, 1), 2];
+                let coord = [i * 8, 0, j * 8];
+                let scale = [3, 10 * getRandomNumber(3, 1), 3];
                 this.buildings_coordinates.push(coord);
                 this.building_scale.push(scale);
 
@@ -181,7 +181,7 @@ export class Takeoff extends Scene {
 
         let ground_model_transform = model_transform;
         let sky_model_transform = model_transform;
-        this.shapes.ground.draw(context, program_state, ground_model_transform.times(Mat4.translation(0, -10, 0)).times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.ground);
+        this.shapes.ground.draw(context, program_state, ground_model_transform.times(Mat4.translation(0, 0, 0)).times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.ground);
 
         this.shapes.sphere.draw(context, program_state, sky_model_transform.times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.sky);
     }
