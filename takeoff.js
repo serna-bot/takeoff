@@ -74,14 +74,21 @@ export class Takeoff extends Scene {
         this.helicopter_physics = new HelicopterPhysics();
 
         this.buildings_model_transform = Array();
+        this.buildings_coordinates = Array();
+        this.building_scale = Array();
 
         for (let i = -60; i < 61; i++) {
             for (let j = -60; j < 61; j++) {
                 if (i % 4 == 0 || j % 4 == 0 || (i + 1) % 4 == 0 || (j+1) % 4 == 0 ) continue;
+                let coord = [i * 6, 0, j * 6];
+                let scale = [2, 10 * getRandomNumber(3, 1), 2];
+                this.buildings_coordinates.push(coord);
+                this.building_scale.push(scale);
+
                 let building_model_transform = Mat4.identity();
                 building_model_transform = building_model_transform
-                    .times(Mat4.translation(i * 6, 0, j * 6))
-                    .times(Mat4.scale(2, 10 * getRandomNumber(3, 1), 2));
+                    .times(Mat4.translation(coord[0], coord[1], coord[2]))
+                    .times(Mat4.scale(scale[0], scale[1], scale[2]));
                 this.buildings_model_transform.push(building_model_transform);
             }
         }
@@ -239,6 +246,8 @@ export class Takeoff extends Scene {
         rotor_transform = rotor_transform.times(Mat4.translation(0, 2.2, 0));
         rotor_transform = rotor_transform.times(Mat4.scale(3,3,3));
         this.shapes.main_rotor.draw(context, program_state, rotor_transform, this.materials.rotor);
+
+        // console.log(this.helicopter_physics.x)
     }
 }
 
