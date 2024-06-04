@@ -1,4 +1,5 @@
 import { tiny } from "./examples/common.js";
+import { die, hashfn } from "./takeoff.js";
 
 const { vec3, Vector3, Mat4 } = tiny;
 
@@ -57,7 +58,7 @@ class Physics {
 const sound = document.getElementById("sound");
 
 export class HelicopterPhysics extends Physics {
-    constructor() {
+    constructor(buildings) {
         super(5e3, zero3, zero3, zero3, Mat4.identity(), zero3, zero3);
 
         this.engine_power = 2.4e6;
@@ -70,6 +71,8 @@ export class HelicopterPhysics extends Physics {
         
         this.tilt_lr = 0;
         this.tilt_fb = 0;
+        this.buildings = buildings;
+        console.log(buildings);
     }
 
     prop_on() {
@@ -117,8 +120,38 @@ export class HelicopterPhysics extends Physics {
 
         super.update(dt);
         
-        if (this.x[1]< -6) {
-            this.x[1] = -6
+        if (this.x[1]< 2) {
+            this.x[1] = 2;
+            this.v[1] = 0;
         }
+
+        const hash = hashfn(this.x[0], this.x[2]);
+        const nearby_buildings = this.buildings.map[hash];
+        console.log(hash);
+        if (nearby_buildings) {
+            console.log(nearby_buildings);
+        nearby_buildings.forEach(i => {
+            const coord = this.buildings.coords[i];
+            const scale = this.buildings.scale[i];
+
+            const xmin = coord[0] - 3;
+            const xmax = coord[0] + 3;
+            const zmin = coord[1] - 3;
+            const zmax = coord[1] + 3;
+
+            const w = 3;
+
+            const bh = scale[1]
+
+            if (xmin < this.x[0] + w && this.x[0] - w < xmax && zmin < this.x[2] + w && this.x[2] - w < zmax && this.x[1] < bh + 2) {
+                if (bh + 1.9 < this.x[1] && this.x[1] < bh + 2) {
+                    this.x[1] = bh + 2;
+                    this.v[1] = Math.max(0, this.v[1]);
+                } else {
+                    die();
+                }
+            }
+        })
+    }
     }
 }

@@ -1,13 +1,24 @@
-import {defs, tiny} from "./examples/common.js";
+import { defs, tiny } from "./examples/common.js";
 import { HelicopterPhysics } from "./physics.js";
 import { Shape_From_File } from "./examples/obj-file-demo.js";
 import { heli } from "./helicopter.js";
 
-import {getRandomNumber} from './helper.js';
+import { getRandomNumber } from './helper.js';
 
 const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Texture, Material, Scene,
 } = tiny;
+
+let death = false;
+
+export const die = () => {
+    death = true;
+    const b = document.getElementById("boom");
+    b.currentTime = 0;
+    b.play();
+}
+
+export const hashfn = (x, y) => Math.floor(x / 20) * 100 + Math.floor(y / 20);
 
 export class Takeoff extends Scene {
     constructor() {
@@ -31,7 +42,6 @@ export class Takeoff extends Scene {
             building: new defs.Cube(),
             helicopter_body: new Shape_From_File("assets/heli_body.obj"),
             window: new Shape_From_File("assets/window.obj"),
-
         };
 
         this.scratchpad = document.createElement('canvas');
@@ -45,53 +55,66 @@ export class Takeoff extends Scene {
         // *** Materials
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
-                {ambient: .8, diffusivity: .6, color: hex_color("#808080")}),
+                { ambient: .8, diffusivity: .6, color: hex_color("#808080") }),
             test2: new Material(new Gouraud_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
+                { ambient: .4, diffusivity: .6, color: hex_color("#992828") }),
             ring: new Material(new Ring_Shader()),
 
             //our materials
             rotor: new Material(new defs.Phong_Shader(),
-                {ambient: .8, diffusivity: .6, color: hex_color("#111111")}),
+                { ambient: .8, diffusivity: .6, color: hex_color("#111111") }),
             building: new Material(bump,
-                {ambient: .6, specularity: 0, texture: new Texture("/assets/building.png")}),
+                { ambient: .6, specularity: 0, texture: new Texture("/assets/building.png") }),
             building2: new Material(bump,
-                {ambient: .6, specularity: 0, texture: new Texture("/assets/building.jpg")}),
+                { ambient: .6, specularity: 0, texture: new Texture("/assets/building.jpg") }),
             building3: new Material(bump,
-                {ambient: .6, specularity: 0, texture: new Texture("/assets/building2.jpg")}),
+                { ambient: .6, specularity: 0, texture: new Texture("/assets/building2.jpg") }),
             helicopter: new Material(new defs.Phong_Shader(),
-                {ambient: .8, diffusivity: .6, color: hex_color("#636363")}),
+                { ambient: .8, diffusivity: .6, color: hex_color("#636363") }),
             ground: new Material(new defs.Phong_Shader(),
-                {ambient: .5, diffusivity: .1, specularity: 0, color: hex_color("#808080")}),
+                { ambient: .5, diffusivity: .1, specularity: 0, color: hex_color("#808080") }),
             sky: new Material(new defs.Phong_Shader(),
-                {ambient: .6, diffusivity: .5, specularity: 0, color: hex_color("#87CEEB")}),
+                { ambient: .6, diffusivity: .5, specularity: 0, color: hex_color("#87CEEB") }),
             window: new Material(new defs.Phong_Shader(),
-                {ambient: .1, diffusivity: .1, specularity: .9, color: hex_color("#91b8db")}),
+                { ambient: .1, diffusivity: .1, specularity: .9, color: hex_color("#91b8db") }),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0.5, 0, 50), vec3(0, 0, 0), vec3(0, 1, 0));
 
-        this.helicopter_physics = new HelicopterPhysics();
-
         this.buildings_model_transform = Array();
-        this.buildings_coordinates = Array();
-        this.building_scale = Array();
+        this.buildings_coordinates = [];
+        this.building_scale = [];
+        this.building_map = {};
 
         for (let i = -60; i < 61; i++) {
             for (let j = -60; j < 61; j++) {
                 if (i % 4 == 0 || j % 4 == 0 || (i + 1) % 4 == 0 || (j+1) % 4 == 0 ) continue;
-                let coord = [i * 8, 0, j * 8];
+                let coord = [i * 8, j * 8];
                 let scale = [3, 10 * getRandomNumber(3, 1), 3];
                 this.buildings_coordinates.push(coord);
                 this.building_scale.push(scale);
 
+                const hash = hashfn(...coord);
+
+                if (hash in this.building_map) {
+                    this.building_map[hash].push(this.building_scale.length - 1);
+                } else {
+                    this.building_map[hash] = [this.building_scale.length - 1];
+                }
+
                 let building_model_transform = Mat4.identity();
                 building_model_transform = building_model_transform
-                    .times(Mat4.translation(coord[0], coord[1], coord[2]))
+                    .times(Mat4.translation(coord[0], 0, coord[1]))
                     .times(Mat4.scale(scale[0], scale[1], scale[2]));
                 this.buildings_model_transform.push(building_model_transform);
             }
         }
+
+        this.helicopter_physics = new HelicopterPhysics({
+            map: this.building_map,
+            scale: this.building_scale,
+            coords: this.buildings_coordinates,
+        });
 
         this.buildings_material = Array.from({ length: 3600 }, () => getRandomNumber(3, 0, true));
 
@@ -147,21 +170,21 @@ export class Takeoff extends Scene {
         this.key_triggered_button("TAKEOFF!", ["Control", "0"], () => {
             this.engine = true;
             this.reset = true;
-            });
+        });
         this.new_line();
         this.key_triggered_button("STOP!", ["Control", "1"], () => {
             this.engine = false;
-            });
+        });
         this.new_line();
-        this.key_triggered_button("SPIN", ["k"], () => {});
-        this.key_triggered_button("FORWARD", ["w"], () => {});
+        this.key_triggered_button("SPIN", ["k"], () => { });
+        this.key_triggered_button("FORWARD", ["w"], () => { });
         this.new_line();
-        this.key_triggered_button("LEFT", ["a"], () => {});
-        this.key_triggered_button("BACK", ["s"], () => {});
-        this.key_triggered_button("RIGHT", ["d"], () => {});
+        this.key_triggered_button("LEFT", ["a"], () => { });
+        this.key_triggered_button("BACK", ["s"], () => { });
+        this.key_triggered_button("RIGHT", ["d"], () => { });
         this.new_line();
-        this.key_triggered_button("TURN LEFT", ["j"], () => {});
-        this.key_triggered_button("TURN RIGHT", ["l"], () => {});
+        this.key_triggered_button("TURN LEFT", ["j"], () => { });
+        this.key_triggered_button("TURN RIGHT", ["l"], () => { });
     }
 
     draw_env(context, program_state, model_transform) {
@@ -181,9 +204,9 @@ export class Takeoff extends Scene {
 
         let ground_model_transform = model_transform;
         let sky_model_transform = model_transform;
-        this.shapes.ground.draw(context, program_state, ground_model_transform.times(Mat4.translation(0, 0, 0)).times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.ground);
+        this.shapes.ground.draw(context, program_state, ground_model_transform.times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.ground);
 
-        this.shapes.sphere.draw(context, program_state, sky_model_transform.times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.sky);
+        this.shapes.sphere.draw(context, program_state, sky_model_transform.times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI / 2, 1, 0, 0)), this.materials.sky);
     }
 
     display(context, program_state) {
@@ -209,6 +232,11 @@ export class Takeoff extends Scene {
 
         this.helicopter_physics.update(dt);
 
+        if (death) {
+            this.helicopter_physics.x = vec3(0, 2, 0);
+            death = false;
+        }
+
         const heli_transform = this.helicopter_physics.get_transform();
 
         const target_cam_mat = Mat4.look_at(
@@ -220,19 +248,21 @@ export class Takeoff extends Scene {
 
         //draw environment
         this.draw_env(context, program_state, Mat4.identity());
-        
+
         const t = program_state.animation_time / 1000;
 
         //NOTE: HELI HAS 3 PARTS (BODY, WINDOW, ROTOR) WHICH SHOULD BE POSITIONED LIKE BELOW:
         let body_tf = heli_transform.times(Mat4.scale(3, 3, 3));
         this.shapes.helicopter_body.draw(context, program_state, body_tf, this.materials.helicopter);
         let window_tf = body_tf.times(Mat4.translation(.04, .8, -.5)) //position window relative to body
-                                .times(Mat4.scale(.45, .45, .45));
-      
+            .times(Mat4.scale(.45, .45, .45));
+
         this.shapes.window.draw(context, program_state, window_tf, this.materials.window);
         let rotor_tf = body_tf.times(Mat4.translation(0, 1.6, .4)) //position rotor relative to body
-        .times(Mat4.rotation(this.helicopter_physics.main_rotor_power / 6e3 * t, 0, 1, 0));
+            .times(Mat4.rotation(this.helicopter_physics.main_rotor_power / 6e3 * t, 0, 1, 0));
         this.shapes.main_rotor.draw(context, program_state, rotor_tf, this.materials.rotor);
+
+        // this.shapes.building.draw(context, program_state, body_tf, this.materials.sky);
     }
 }
 
@@ -379,7 +409,7 @@ class Gouraud_Shader extends Shader {
         // within this function, one data field at a time, to fully initialize the shader for a draw.
 
         // Fill in any missing fields in the Material object with custom defaults for this shader:
-        const defaults = {color: color(0, 0, 0, 1), ambient: 0, diffusivity: 1, specularity: 1, smoothness: 40};
+        const defaults = { color: color(0, 0, 0, 1), ambient: 0, diffusivity: 1, specularity: 1, smoothness: 40 };
         material = Object.assign({}, defaults, material);
 
         this.send_material(context, gpu_addresses, material);
