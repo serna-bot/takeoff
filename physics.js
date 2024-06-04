@@ -72,7 +72,6 @@ export class HelicopterPhysics extends Physics {
         this.tilt_lr = 0;
         this.tilt_fb = 0;
         this.buildings = buildings;
-        console.log(buildings);
     }
 
     prop_on() {
@@ -127,9 +126,7 @@ export class HelicopterPhysics extends Physics {
 
         const hash = hashfn(this.x[0], this.x[2]);
         const nearby_buildings = this.buildings.map[hash];
-        console.log(hash);
         if (nearby_buildings) {
-            console.log(nearby_buildings);
         nearby_buildings.forEach(i => {
             const coord = this.buildings.coords[i];
             const scale = this.buildings.scale[i];
