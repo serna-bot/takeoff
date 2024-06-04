@@ -100,16 +100,16 @@ export class Takeoff extends Scene {
                     this.helicopter_physics.rotate_right();
                     break;
                 case "w":
-                    this.helicopter_physics.tilt_fb = -15;
+                    this.helicopter_physics.tilt_fb = -20;
                     break;
                 case "s":
-                    this.helicopter_physics.tilt_fb = 15;
+                    this.helicopter_physics.tilt_fb = 20;
                     break;
                 case "a":
-                    this.helicopter_physics.tilt_lr = 15;
+                    this.helicopter_physics.tilt_lr = 20;
                     break;
                 case "d":
-                    this.helicopter_physics.tilt_lr = -15;
+                    this.helicopter_physics.tilt_lr = -20;
                     break;
             }
         });
@@ -158,8 +158,6 @@ export class Takeoff extends Scene {
     }
 
     draw_env(context, program_state, model_transform) {
-        
-
         // loop start form the left bottom corner of the ground and create a loop.
 
         // for now have one large intersection in the middle, two smaller streets x and y
@@ -204,41 +202,29 @@ export class Takeoff extends Scene {
 
         this.helicopter_physics.update(dt);
 
-        const body_transform = this.helicopter_physics.get_transform();
+        const heli_transform = this.helicopter_physics.get_transform();
 
-        //draw our helicopter
+        const target_cam_mat = Mat4.look_at(
+            vec3(...heli_transform.times(vec4(0, 15, 40, 1))),
+            vec3(...heli_transform.times(vec4(0, 0, 0, 1))),
+            vec3(0, 1, 0));
+
+        program_state.set_camera(target_cam_mat);
+
+        //draw environment
         this.draw_env(context, program_state, Mat4.identity());
         
-        let model_transform = body_transform;
-        this.shapes.helicopter.draw(context, program_state, model_transform, this.materials.helicopter);
-        //reset time for when rotor starts
-        if (this.reset) {
-            this.offset = program_state.animation_time;
-            this.reset = false;
-        }
-        const t = (program_state.animation_time - this.offset) / 1000;
-
-        const speed = 25 / (1 + Math.exp(-.5 * (t - 5))); //logistic growth
+        const t = program_state.animation_time / 1000;
 
         //NOTE: HELI HAS 3 PARTS (BODY, WINDOW, ROTOR) WHICH SHOULD BE POSITIONED LIKE BELOW:
-        let still = Mat4.identity().times(Mat4.scale(3,3,3)) //set body scale and position
-                                   .times(Mat4.translation(0, -2.8, 0));
-        this.shapes.helicopter_body.draw(context, program_state, still, this.materials.helicopter);
-        let still_window = still.times(Mat4.translation(.04, .8, -.5)) //position window relative to body
+        let body_tf = heli_transform.times(Mat4.scale(3, 3, 3));
+        this.shapes.helicopter_body.draw(context, program_state, body_tf, this.materials.helicopter);
+        let window_tf = body_tf.times(Mat4.translation(.04, .8, -.5)) //position window relative to body
                                 .times(Mat4.scale(.45, .45, .45));
-        this.shapes.window.draw(context, program_state, still_window, this.materials.window);
-        let still_rotor = still.times(Mat4.translation(0, 1.6, .4)); //position rotor relative to body
-        if (this.engine) {
-            still_rotor = still_rotor.times(Mat4.rotation(speed*t, 0, 1, 0));
-        }
-        this.shapes.main_rotor.draw(context, program_state, still_rotor, this.materials.rotor);
-
-        //draw our rotor
-        let rotor_transform = body_transform;
-        rotor_transform = rotor_transform.times(Mat4.rotation(this.helicopter_physics.main_rotor_power / 1e5 * t, 0, 1, 0));
-        rotor_transform = rotor_transform.times(Mat4.translation(0, 2.2, 0));
-        rotor_transform = rotor_transform.times(Mat4.scale(3,3,3));
-        this.shapes.main_rotor.draw(context, program_state, rotor_transform, this.materials.rotor);
+        this.shapes.window.draw(context, program_state, window_tf, this.materials.window);
+        let rotor_tf = body_tf.times(Mat4.translation(0, 1.6, .4)) //position rotor relative to body
+        .times(Mat4.rotation(this.helicopter_physics.main_rotor_power / 6e3 * t, 0, 1, 0));
+        this.shapes.main_rotor.draw(context, program_state, rotor_tf, this.materials.rotor);
     }
 }
 
