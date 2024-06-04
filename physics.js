@@ -116,5 +116,9 @@ export class HelicopterPhysics extends Physics {
         this.t = vec3(0, f_rot + f_rot_drag, 0);
 
         super.update(dt);
+        
+        if (this.x[1]< -6) {
+            this.x[1] = -6
+        }
     }
 }
