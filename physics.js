@@ -72,6 +72,7 @@ export class HelicopterPhysics extends Physics {
         this.tilt_lr = 0;
         this.tilt_fb = 0;
         this.buildings = buildings;
+        this.fuel = 100;
     }
 
     prop_on() {
@@ -97,6 +98,11 @@ export class HelicopterPhysics extends Physics {
     }
 
     update(dt) {
+        if (this.fuel <= 0) {
+            this.main_rotor_power = 0;
+            this.tail_rotor_power = 0;
+        }
+
         const f_g = vec3(0, -10 * this.m, 0);
 
         const tilt = Mat4.rotation(this.tilt_fb * Math.PI / 180, 1, 0, 0)
@@ -117,11 +123,15 @@ export class HelicopterPhysics extends Physics {
         this.f = f_g.plus(f_lift).plus(f_drag);
         this.t = vec3(0, f_rot + f_rot_drag, 0);
 
+        if (this.x[1] > 2 && lift_mag > 0) this.fuel -= (this.x[1] - 2) * 0.01;
+        
+        console.log(this.fuel);
         super.update(dt);
         
         if (this.x[1]< 2) {
             this.x[1] = 2;
-            this.v[1] = 0;
+            this.v = vec3(0, 0, 0);
+            this.w = vec3(0, 0, 0);
         }
 
         const hash = hashfn(this.x[0], this.x[2]);
@@ -143,8 +153,11 @@ export class HelicopterPhysics extends Physics {
             if (xmin < this.x[0] + w && this.x[0] - w < xmax && zmin < this.x[2] + w && this.x[2] - w < zmax && this.x[1] < bh + 2) {
                 if (bh + 1.9 < this.x[1] && this.x[1] < bh + 2) {
                     this.x[1] = bh + 2;
-                    this.v[1] = Math.max(0, this.v[1]);
+                    this.v = vec3(0, 0, 0);
+                    this.w = vec3(0, 0, 0);
+                    // this.v[1] = Math.max(0, this.v[1]);
                 } else {
+                    this.fuel = 100;
                     die();
                 }
             }
