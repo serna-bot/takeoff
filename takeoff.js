@@ -94,7 +94,7 @@ export class Takeoff extends Scene {
         console.log(this.refuel_station.has(1));
         console.log(getRandomNumber(3600, 0, true));
 
-        for (let i = 0; i < 360; i++) {
+        for (let i = 0; i < 200; i++) {
             let index = getRandomNumber(3600, 0, true);
             while (this.refuel_station.has(index)) {
                 index = getRandomNumber(3600, 0, true);
