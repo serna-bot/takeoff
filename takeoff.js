@@ -80,6 +80,8 @@ export class Takeoff extends Scene {
                 { ambient: .1, diffusivity: .1, specularity: .9, color: hex_color("#91b8db") }),
             fuel: new Material(bump,
                 { ambient: .6, specularity: 0, texture: new Texture("/assets/fuel.png") }),
+            sun: new Material(bump, 
+                { ambient: 1, diffusivity: 1, specularity: 1, texture: new Texture("/assets/lebron.jpg")})
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0.5, 0, 50), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -221,9 +223,11 @@ export class Takeoff extends Scene {
 
         let ground_model_transform = model_transform;
         let sky_model_transform = model_transform;
+        let sun_model_transform = model_transform;
         this.shapes.ground.draw(context, program_state, ground_model_transform.times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.ground);
 
         this.shapes.sphere.draw(context, program_state, sky_model_transform.times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI / 2, 1, 0, 0)), this.materials.sky);
+        this.shapes.circle.draw(context, program_state, sun_model_transform.times(Mat4.translation(0, 50, -180)).times(Mat4.scale(10, 10, 10)), this.materials.sun);
 
         //REFUEL STATION START
         this.refuel_station.forEach((index, value, set) => {
