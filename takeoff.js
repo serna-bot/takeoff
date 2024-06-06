@@ -71,7 +71,7 @@ export class Takeoff extends Scene {
             building3: new Material(bump,
                 { ambient: .6, specularity: 0, texture: new Texture("/assets/building2.jpg") }),
             helicopter: new Material(new defs.Phong_Shader(),
-                { ambient: .8, diffusivity: .6, color: hex_color("#636363") }),
+                { ambient: .8, diffusivity: .6, color: hex_color("#9F2525") }),
             ground: new Material(new defs.Phong_Shader(),
                 { ambient: .5, diffusivity: .1, specularity: 0, color: hex_color("#808080") }),
             sky: new Material(new defs.Phong_Shader(),
@@ -93,8 +93,6 @@ export class Takeoff extends Scene {
 
         this.refuel_station = new Set();
         this.refuel_station.add(1830);
-        console.log(this.refuel_station.has(1));
-        console.log(getRandomNumber(3600, 0, true));
 
         for (let i = 0; i < 200; i++) {
             let index = getRandomNumber(3600, 0, true);
