@@ -42,6 +42,7 @@ export class Takeoff extends Scene {
             building: new defs.Cube(),
             helicopter_body: new Shape_From_File("assets/heli_body.obj"),
             window: new Shape_From_File("assets/window.obj"),
+            fuel: new defs.Cube(),
         };
 
         this.scratchpad = document.createElement('canvas');
@@ -77,6 +78,8 @@ export class Takeoff extends Scene {
                 { ambient: .6, diffusivity: .5, specularity: 0, color: hex_color("#87CEEB") }),
             window: new Material(new defs.Phong_Shader(),
                 { ambient: .1, diffusivity: .1, specularity: .9, color: hex_color("#91b8db") }),
+            fuel: new Material(bump,
+                { ambient: .6, specularity: 0, texture: new Texture("/assets/fuel.png") }),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0.5, 0, 50), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -85,6 +88,19 @@ export class Takeoff extends Scene {
         this.buildings_coordinates = [];
         this.building_scale = [];
         this.building_map = {};
+
+        this.refuel_station = new Set();
+        this.refuel_station.add(1);
+        console.log(this.refuel_station.has(1));
+        console.log(getRandomNumber(3600, 0, true));
+
+        for (let i = 0; i < 360; i++) {
+            let index = getRandomNumber(3600, 0, true);
+            while (this.refuel_station.has(index)) {
+                index = getRandomNumber(3600, 0, true);
+            }
+            this.refuel_station.add(index);
+        }
 
         for (let i = -60; i < 61; i++) {
             for (let j = -60; j < 61; j++) {
@@ -207,6 +223,18 @@ export class Takeoff extends Scene {
         this.shapes.ground.draw(context, program_state, ground_model_transform.times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.ground);
 
         this.shapes.sphere.draw(context, program_state, sky_model_transform.times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI / 2, 1, 0, 0)), this.materials.sky);
+
+        this.refuel_station.forEach((index, value, set) => {
+            const coord = this.buildings_coordinates[index];
+            const scale  = this.building_scale[index];
+            let translation =[
+                ...coord.slice(0, 1),
+                scale[1] + 2,
+                ...coord.slice(1)
+            ];
+            let fuel_model_transform = model_transform;
+            this.shapes.fuel.draw(context, program_state, fuel_model_transform.times(Mat4.translation(translation[0], translation[1], translation[2])).times(Mat4.scale(2, 2, 2)), this.materials.fuel)
+        });
     }
 
     display(context, program_state) {
