@@ -118,7 +118,7 @@ export class HelicopterPhysics extends Physics {
         this.engine_power = 2.4e6;
         this.f_lift_max = 1e5;
         this.f_rot_max = 1e4;
-        this.air_res = 2000;
+        this.air_res = 1200;
 
         this.main_rotor_power = 0;
         this.tail_rotor_power = 0;
@@ -151,6 +151,18 @@ export class HelicopterPhysics extends Physics {
         this.tail_rotor_power = 0;
     }
 
+    refuel(sound) {
+        if (this.fuel < 100) {
+            this.fuel = 100;
+
+            if (sound) {
+                const b = document.getElementById("fuel");
+                b.currentTime = 0;
+                b.play();
+            }
+        }
+    }
+
     update(dt) {
         if (this.fuel <= 0) {
             this.main_rotor_power = 0;
@@ -177,15 +189,16 @@ export class HelicopterPhysics extends Physics {
         this.f = f_g.plus(f_lift).plus(f_drag);
         this.t = vec3(0, f_rot + f_rot_drag, 0);
 
-        if (this.x[1] > 2 && lift_mag > 0) this.fuel -= (this.x[1] - 2) * 0.01;
+        if (this.x[1] > 2 && lift_mag > 0) this.fuel -= (this.x[1] - 2) * 0.03 * dt;
         
-        console.log(this.fuel);
         super.update(dt);
 
         if (this.x[1] < 2) {
             this.x[1] = 2;
-            this.v = vec3(0, 0, 0);
-            this.w = vec3(0, 0, 0);
+            this.v[1] = Math.max(this.v[1], 0)
+            this.v[0] /= 4;
+            this.v[2] /= 4;
+            this.w.scale_by(0.25);
         }
 
         const hash = hashfn(this.x[0], this.x[2]);
@@ -216,19 +229,30 @@ export class HelicopterPhysics extends Physics {
             const zmax = coord[1] + 3;
 
             return [
-                [[vec4(xmin, 0, zmin, 1), vec4(6, 0, 0, 0)], scale[1]],
-                [[vec4(xmin, 0, zmin, 1), vec4(0, 0, 6, 0)], scale[1]],
-                [[vec4(xmax, 0, zmax, 1), vec4(0, 0, -6, 0)], scale[1]],
-                [[vec4(xmax, 0, zmax, 1), vec4(-6, 0, 0, 0)], scale[1]],
+                [[vec4(xmin, 0, zmin, 1), vec4(6, 0, 0, 0)], scale[1], i],
+                [[vec4(xmin, 0, zmin, 1), vec4(0, 0, 6, 0)], scale[1], i],
+                [[vec4(xmax, 0, zmax, 1), vec4(0, 0, -6, 0)], scale[1], i],
+                [[vec4(xmax, 0, zmax, 1), vec4(-6, 0, 0, 0)], scale[1], i],
             ];
-        }).forEach(([eb, bh]) => {
+        }).forEach(([eb, bh, i]) => {
             for (const eh of heli_edges) {
                 if (intersect(eb, eh)) {
                     if (this.x[1] < bh + 2) {
-                        this.x[1] = bh + 2;
-                        this.v[1] = Math.max(0, this.v[1]);
+                        if (this.x[1] >= bh + 1) {
+                            this.x[1] = bh + 2;
+                            this.v[1] = Math.max(0, this.v[1]);
+                            this.v[0] /= 4;
+                            this.v[2] /= 4;
 
-                        this.w = vec3(0, 0, 0);
+                            this.w.scale_by(0.25);
+
+                            if (this.buildings.refuel.has(i)) {
+                                this.refuel(true);
+                            }
+                        } else {
+                            die();
+                            this.refuel(false);
+                        }
                     }
                 }
             }

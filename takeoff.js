@@ -90,7 +90,7 @@ export class Takeoff extends Scene {
         this.building_map = {};
 
         this.refuel_station = new Set();
-        this.refuel_station.add(1);
+        this.refuel_station.add(1830);
         console.log(this.refuel_station.has(1));
         console.log(getRandomNumber(3600, 0, true));
 
@@ -130,6 +130,7 @@ export class Takeoff extends Scene {
             map: this.building_map,
             scale: this.building_scale,
             coords: this.buildings_coordinates,
+            refuel: this.refuel_station,
         });
 
         this.buildings_material = Array.from({ length: 3600 }, () => getRandomNumber(3, 0, true));
