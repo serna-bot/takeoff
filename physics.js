@@ -1,9 +1,63 @@
 import { tiny } from "./examples/common.js";
 import { die, hashfn } from "./takeoff.js";
 
-const { vec3, Vector3, Mat4 } = tiny;
+const { vec3, vec4, Vector3, Mat4 } = tiny;
 
 const zero3 = vec3(0, 0, 0);
+
+/*
+
+    p1 + v1 * t = p2 + v2 * s
+
+    [v1, -v2][t; s] = p2 - p1
+
+    [1, -v21 / v11; 1, -v22 / v12][t; s] = [(p21 - p11) / v11; (p22 - p12) / v12]
+
+    [1, -v21 / v11; 0, v21 / v11 - v22 / v12][t; s] = [(p21 - p11) / v11; (p22 - p12) / v12 - (p21 - p11) / v11]
+
+    [1, -v21 / v11; 0, 1][t; s] = [(p21 - p11) / v11;
+                                    ((p22 - p12) / v12 - (p21 - p11) / v11) / (v21 / v11 - v22 / v12)]
+
+    [1, 0; 0, 1][t; s] = [(p21 - p11) / v11 + v21 / v11 * (((p22 - p12) / v12 - (p21 - p11) / v11) / (v21 / v11 - v22 / v12));
+                          ((p22 - p12) / v12 - (p21 - p11) / v11) / (v21 / v11 - v22 / v12)]
+*/
+
+
+
+const intersect = (ls1, ls2) => {
+    const [p1, v1] = ls1;
+    const [p2, v2] = ls2;
+
+    if (p1.minus(p2).norm() == 0)
+        return true;
+
+    let [v11, _a, v12] = v1;
+    let [v21, _b, v22] = v2;
+    let [e1, _c, e2] = p2.minus(p1);
+
+    let [a, b, c, d, e, f] = [v11, -v21, e1, v12, -v22, e2];
+
+    if (a == 0 && d == 0) {
+        return false;
+    } else if (a == 0) {
+        [a, b, c, d, e, f] = [d, e, f, a, b, c];
+    }
+
+    b /= a;
+    c /= a;
+
+    e -= b * d;
+    f -= c * d;
+
+    if (e == 0)
+        return f == 0;
+
+    f /= e;
+
+    c -= b * f;
+
+    return (0 <= f && f <= 1) && (0 <= c && c <= 1);
+};
 
 class Physics {
     /**
@@ -68,7 +122,7 @@ export class HelicopterPhysics extends Physics {
 
         this.main_rotor_power = 0;
         this.tail_rotor_power = 0;
-        
+
         this.tilt_lr = 0;
         this.tilt_fb = 0;
         this.buildings = buildings;
@@ -127,8 +181,8 @@ export class HelicopterPhysics extends Physics {
         
         console.log(this.fuel);
         super.update(dt);
-        
-        if (this.x[1]< 2) {
+
+        if (this.x[1] < 2) {
             this.x[1] = 2;
             this.v = vec3(0, 0, 0);
             this.w = vec3(0, 0, 0);
@@ -136,8 +190,23 @@ export class HelicopterPhysics extends Physics {
 
         const hash = hashfn(this.x[0], this.x[2]);
         const nearby_buildings = this.buildings.map[hash];
-        if (nearby_buildings) {
-        nearby_buildings.forEach(i => {
+
+        const tf = this.get_transform();
+
+        const tr = tf.times(vec4(3, 0, 3, 1));
+        const bl = tf.times(vec4(-3, 0, -3, 1));
+        const br = tf.times(vec4(3, 0, -3, 1));
+        const tl = tf.times(vec4(-3, 0, 3, 1));
+
+        tr[1] = bl[1] = br[1] = tl[1] = 0;
+        const heli_edges = [
+            [bl, br.minus(bl)],
+            [bl, tl.minus(bl)],
+            [tr, br.minus(tr)],
+            [tr, tl.minus(tr)]
+        ];
+
+        nearby_buildings?.flatMap(i => {
             const coord = this.buildings.coords[i];
             const scale = this.buildings.scale[i];
 
@@ -146,22 +215,23 @@ export class HelicopterPhysics extends Physics {
             const zmin = coord[1] - 3;
             const zmax = coord[1] + 3;
 
-            const w = 3;
+            return [
+                [[vec4(xmin, 0, zmin, 1), vec4(6, 0, 0, 0)], scale[1]],
+                [[vec4(xmin, 0, zmin, 1), vec4(0, 0, 6, 0)], scale[1]],
+                [[vec4(xmax, 0, zmax, 1), vec4(0, 0, -6, 0)], scale[1]],
+                [[vec4(xmax, 0, zmax, 1), vec4(-6, 0, 0, 0)], scale[1]],
+            ];
+        }).forEach(([eb, bh]) => {
+            for (const eh of heli_edges) {
+                if (intersect(eb, eh)) {
+                    if (this.x[1] < bh + 2) {
+                        this.x[1] = bh + 2;
+                        this.v[1] = Math.max(0, this.v[1]);
 
-            const bh = scale[1]
-
-            if (xmin < this.x[0] + w && this.x[0] - w < xmax && zmin < this.x[2] + w && this.x[2] - w < zmax && this.x[1] < bh + 2) {
-                if (bh + 1.9 < this.x[1] && this.x[1] < bh + 2) {
-                    this.x[1] = bh + 2;
-                    this.v = vec3(0, 0, 0);
-                    this.w = vec3(0, 0, 0);
-                    // this.v[1] = Math.max(0, this.v[1]);
-                } else {
-                    this.fuel = 100;
-                    die();
+                        this.w = vec3(0, 0, 0);
+                    }
                 }
             }
-        })
-    }
+        });
     }
 }
