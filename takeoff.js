@@ -71,7 +71,7 @@ export class Takeoff extends Scene {
             building3: new Material(bump,
                 { ambient: .6, specularity: 0, texture: new Texture("/assets/building2.jpg") }),
             helicopter: new Material(new defs.Phong_Shader(),
-                { ambient: .8, diffusivity: .6, color: hex_color("#9F2525") }),
+                { ambient: .5, diffusivity: .6, color: hex_color("#b51d09") }),
             ground: new Material(new defs.Phong_Shader(),
                 { ambient: .5, diffusivity: .1, specularity: 0, color: hex_color("#808080") }),
             sky: new Material(new defs.Phong_Shader(),
@@ -81,7 +81,9 @@ export class Takeoff extends Scene {
             fuel: new Material(bump,
                 { ambient: .6, specularity: 0, texture: new Texture("/assets/fuel.png") }),
             sun: new Material(bump, 
-                { ambient: 1, diffusivity: 1, specularity: 1, texture: new Texture("/assets/lebron.jpg")})
+                { ambient: 1, diffusivity: 1, specularity: 1, texture: new Texture("/assets/lebron.jpg")}),
+            gauge: new Material(bump,
+                { ambient: 0.9, specularity: 0, texture: new Texture("/assets/guage.png")})
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0.5, 0, 50), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -222,7 +224,7 @@ export class Takeoff extends Scene {
         let ground_model_transform = model_transform;
         let sky_model_transform = model_transform;
         let sun_model_transform = model_transform;
-        this.shapes.ground.draw(context, program_state, ground_model_transform.times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.ground);
+        this.shapes.ground.draw(context, program_state, ground_model_transform.times(Mat4.scale(400, 400, 400)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.ground);
 
         this.shapes.sphere.draw(context, program_state, sky_model_transform.times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI / 2, 1, 0, 0)), this.materials.sky);
         this.shapes.circle.draw(context, program_state, sun_model_transform.times(Mat4.translation(0, 50, -180)).times(Mat4.scale(10, 10, 10)), this.materials.sun);
@@ -285,7 +287,11 @@ export class Takeoff extends Scene {
         const t = program_state.animation_time / 1000;
 
         //NOTE: HELI HAS 3 PARTS (BODY, WINDOW, ROTOR) WHICH SHOULD BE POSITIONED LIKE BELOW:
-        let body_tf = heli_transform.times(Mat4.scale(3, 3, 3));
+
+        const tilt = Mat4.rotation(this.helicopter_physics.tilt_fb * Math.PI / 180 / 2, 1, 0, 0)
+            .times(Mat4.rotation(this.helicopter_physics.tilt_lr * Math.PI / 180 / 2, 0, 0, 1));
+        
+        let body_tf = heli_transform.times(tilt).times(Mat4.scale(3, 3, 3));
         this.shapes.helicopter_body.draw(context, program_state, body_tf, this.materials.helicopter);
         let window_tf = body_tf.times(Mat4.translation(.04, .8, -.5)) //position window relative to body
             .times(Mat4.scale(.45, .45, .45));
@@ -298,11 +304,12 @@ export class Takeoff extends Scene {
         //GUAGE CODE START
 
         let gauge_transform = heli_transform;
-        gauge_transform = gauge_transform.times(Mat4.translation(-10.5, 4.5, 28)).times(Mat4.scale(3.5, 3.5, 3.5)).times(Mat4.rotation(1.5*Math.PI, 0, 0, 1));
-        this.shapes.circle.draw(context, program_state, gauge_transform,this.materials.test);
-        let meter = gauge_transform;
+        gauge_transform = gauge_transform.times(Mat4.translation(-(18.5) / 1.5, 15 / 1.5 - 7.5, 40 / 1.5)).times(Mat4.scale(3.5, 3.5, 3.5)).times(Mat4.rotation(-Math.atan2(15, 40), 1, 0, 0));
+        this.shapes.circle.draw(context, program_state, gauge_transform,this.materials.gauge);
+
+        let meter = gauge_transform.times(Mat4.rotation(-0.5 * Math.PI * (1 - this.helicopter_physics.fuel / 100), 0, 0, 1));
         
-        meter = meter.times(Mat4.translation(0.05, 0.1, 0.1)).times(Mat4.scale(0.01, 0.8, 0.01));
+        meter = meter.times(Mat4.scale(0.01, 0.8, 0.01));
         this.shapes.fuel.draw(context, program_state, meter, this.materials.test.override({color:color(0, 0, 0, 1)}));
 
         //GUAGE CODE END

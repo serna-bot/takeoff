@@ -131,7 +131,8 @@ export class HelicopterPhysics extends Physics {
 
     prop_on() {
         this.main_rotor_power = this.engine_power;
-        sound.play();
+        if (this.fuel > 0)
+            sound.play();
     }
 
     prop_off() {
@@ -167,6 +168,7 @@ export class HelicopterPhysics extends Physics {
         if (this.fuel <= 0) {
             this.main_rotor_power = 0;
             this.tail_rotor_power = 0;
+            sound.pause();
         }
 
         const f_g = vec3(0, -10 * this.m, 0);
