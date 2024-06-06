@@ -33,7 +33,7 @@ export class Takeoff extends Scene {
             torus: new defs.Torus(15, 15),
             torus2: new defs.Torus(3, 15),
             sphere: new defs.Subdivision_Sphere(4),
-            circle: new defs.Regular_2D_Polygon(1, 15),
+            circle: new defs.Regular_2D_Polygon(1, 40),
 
             //our shapes
             helicopter: new heli.Helicopter(),
@@ -224,6 +224,7 @@ export class Takeoff extends Scene {
 
         this.shapes.sphere.draw(context, program_state, sky_model_transform.times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI / 2, 1, 0, 0)), this.materials.sky);
 
+        //REFUEL STATION START
         this.refuel_station.forEach((index, value, set) => {
             const coord = this.buildings_coordinates[index];
             const scale  = this.building_scale[index];
@@ -235,6 +236,7 @@ export class Takeoff extends Scene {
             let fuel_model_transform = model_transform;
             this.shapes.fuel.draw(context, program_state, fuel_model_transform.times(Mat4.translation(translation[0], translation[1], translation[2])).times(Mat4.scale(2, 2, 2)), this.materials.fuel)
         });
+        //REFUEL STATION END
     }
 
     display(context, program_state) {
@@ -290,7 +292,17 @@ export class Takeoff extends Scene {
             .times(Mat4.rotation(this.helicopter_physics.main_rotor_power / 6e3 * t, 0, 1, 0));
         this.shapes.main_rotor.draw(context, program_state, rotor_tf, this.materials.rotor);
 
-        // this.shapes.building.draw(context, program_state, body_tf, this.materials.sky);
+        //GUAGE CODE START
+
+        let gauge_transform = heli_transform;
+        gauge_transform = gauge_transform.times(Mat4.translation(-10.5, 4.5, 28)).times(Mat4.scale(3.5, 3.5, 3.5)).times(Mat4.rotation(1.5*Math.PI, 0, 0, 1));
+        this.shapes.circle.draw(context, program_state, gauge_transform,this.materials.test);
+        let meter = gauge_transform;
+        
+        meter = meter.times(Mat4.translation(0.05, 0.1, 0.1)).times(Mat4.scale(0.01, 0.8, 0.01));
+        this.shapes.fuel.draw(context, program_state, meter, this.materials.test.override({color:color(0, 0, 0, 1)}));
+
+        //GUAGE CODE END
     }
 }
 
