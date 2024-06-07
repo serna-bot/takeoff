@@ -43,6 +43,7 @@ export class Takeoff extends Scene {
             helicopter_body: new Shape_From_File("assets/heli_body.obj"),
             window: new Shape_From_File("assets/window.obj"),
             fuel: new defs.Cube(),
+            triangle: new defs.Triangle(),
         };
 
         this.scratchpad = document.createElement('canvas');
@@ -83,7 +84,8 @@ export class Takeoff extends Scene {
             sun: new Material(bump, 
                 { ambient: 1, diffusivity: 1, specularity: 1, texture: new Texture("/assets/sun.png")}),
             gauge: new Material(bump,
-                { ambient: 0.9, specularity: 0, texture: new Texture("/assets/guage.png")})
+                { ambient: 0.9, specularity: 0, texture: new Texture("/assets/guage.png")}),
+            shard: new Material(new defs.Phong_Shader(), { ambient: 1, diffusivity: 1, specularity: 1, color: hex_color("#ff0000") }),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0.5, 0, 50), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -254,14 +256,45 @@ export class Takeoff extends Scene {
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 10000), new Light(sun_position, color(1, 1, 1, 1), 10000000)];
 
 
-        const dt = program_state.animation_delta_time / 1000;
-
-        this.helicopter_physics.update(dt);
+        let dt = program_state.animation_delta_time / 1000;
 
         if (death) {
-            this.helicopter_physics.x = vec3(0, 2, 0);
-            death = false;
+
+            dt /= 60;
+
+            const heli_tf = this.helicopter_physics.get_transform();
+
+            if (!this?.shards) {
+                this.shards = [];
+
+                for (let i = 0; i < 2000; i++) {
+
+                    const dx = Math.random() * 20 - 10;
+                    const dy = Math.random() * 20 - 10;
+                    const dz = Math.random() * 20 - 10;
+
+                    this.shards.push(vec3(dx, dy, dz));
+
+                    const mat = this.materials.shard.override({color: color(1, Math.random(), 0, 1)})
+
+                    this.shapes.triangle.draw(context, program_state, heli_tf.times(Mat4.translation(dx, dy, dz)), mat);
+                }
+            } else {
+                for (let shard_dist of this.shards) {
+                    shard_dist.scale_by(shard_dist.norm() / 5);
+                    const mat = this.materials.shard.override({color: color(1, Math.random(), 0, 1)})
+                    this.shapes.triangle.draw(context, program_state, heli_tf.times(Mat4.translation(...shard_dist)), mat);
+                }
+            }
+
+            setTimeout(() => {
+                this.helicopter_physics.x = vec3(0, 2, 0);
+                death = false;
+                this.shards = null;
+            }, 480);
         }
+
+        this.helicopter_physics.update(dt);
 
         const heli_transform = this.helicopter_physics.get_transform();
 
