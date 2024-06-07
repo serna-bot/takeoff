@@ -63,7 +63,7 @@ export class Takeoff extends Scene {
 
             //our materials
             rotor: new Material(new defs.Phong_Shader(),
-                { ambient: .2, diffusivity: .6, color: hex_color("#111111") }),
+                { ambient: .8, specularity: .7, diffusivity: .5, color: hex_color("#111111") }),
             building: new Material(bump,
                 { ambient: .6, specularity: 0, texture: new Texture("/assets/building.png") }),
             building2: new Material(bump,
@@ -71,7 +71,7 @@ export class Takeoff extends Scene {
             building3: new Material(bump,
                 { ambient: .6, specularity: 0, texture: new Texture("/assets/building2.jpg") }),
             helicopter: new Material(new defs.Phong_Shader(),
-                { ambient: .7, diffusivity: .6, color: hex_color("#b51d09") }),
+                { ambient: .75, specularity: 1, diffusivity: .6, color: hex_color("#b51d09") }),
             ground: new Material(new defs.Textured_Phong(), {
                 color: hex_color("#000000"), ambient: 1.0, texture: new Texture("assets/floor.jpeg", "NEAREST")}),
             sky: new Material(new defs.Phong_Shader(),
@@ -218,7 +218,7 @@ export class Takeoff extends Scene {
         this.shapes.ground.draw(context, program_state, ground_model_transform.times(Mat4.scale(400, 400, 400)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.ground);
 
         this.shapes.sphere.draw(context, program_state, sky_model_transform.times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI / 2, 1, 0, 0)), this.materials.sky);
-        this.shapes.sphere.draw(context, program_state, sun_model_transform.times(Mat4.translation(0, 55, -150)).times(Mat4.scale(10, 10, 10)), this.materials.sun);
+        this.shapes.sphere.draw(context, program_state, sun_model_transform.times(Mat4.translation(0, 55, -170)).times(Mat4.scale(10, 10, 10)), this.materials.sun);
 
         //REFUEL STATION START
         this.refuel_station.forEach((index, value, set) => {
@@ -248,7 +248,7 @@ export class Takeoff extends Scene {
             Math.PI / 4, context.width / context.height, .1, 100000);
 
         // TODO: Lighting (Requirement 2)
-        const sun_position = vec4(0, 55, -150, 1);
+        const sun_position = vec4(0, 55, -170, 1);
         // The parameters of the Light are: position, color, size
         program_state.lights = [new Light(sun_position, color(1, 1, 1, 1), 1000000)];
 
