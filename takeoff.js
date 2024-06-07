@@ -72,8 +72,8 @@ export class Takeoff extends Scene {
                 { ambient: .6, specularity: 0, texture: new Texture("/assets/building2.jpg") }),
             helicopter: new Material(new defs.Phong_Shader(),
                 { ambient: .5, diffusivity: .6, color: hex_color("#b51d09") }),
-            ground: new Material(new defs.Phong_Shader(),
-                { ambient: .5, diffusivity: .1, specularity: 0, color: hex_color("#808080") }),
+            ground: new Material(new defs.Textured_Phong(), {
+                color: hex_color("#000000"), ambient: 1.0, texture: new Texture("assets/floor.jpeg", "NEAREST")}),
             sky: new Material(new defs.Phong_Shader(),
                 { ambient: .6, diffusivity: .5, specularity: 0, color: hex_color("#87CEEB") }),
             window: new Material(new defs.Phong_Shader(),
