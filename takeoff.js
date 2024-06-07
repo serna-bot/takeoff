@@ -249,8 +249,9 @@ export class Takeoff extends Scene {
 
         // TODO: Lighting (Requirement 2)
         const sun_position = vec4(0, 55, -160, 1);
+        const light_position = vec4(0, 100, 0, 1);
         // The parameters of the Light are: position, color, size
-        program_state.lights = [new Light(sun_position, color(1, 1, 1, 1), 10000000)];
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 10000), new Light(sun_position, color(1, 1, 1, 1), 10000000)];
 
 
         const dt = program_state.animation_delta_time / 1000;
