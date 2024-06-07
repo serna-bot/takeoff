@@ -63,7 +63,7 @@ export class Takeoff extends Scene {
 
             //our materials
             rotor: new Material(new defs.Phong_Shader(),
-                { ambient: .8, diffusivity: .6, color: hex_color("#111111") }),
+                { ambient: .2, diffusivity: .6, color: hex_color("#111111") }),
             building: new Material(bump,
                 { ambient: .6, specularity: 0, texture: new Texture("/assets/building.png") }),
             building2: new Material(bump,
@@ -71,17 +71,17 @@ export class Takeoff extends Scene {
             building3: new Material(bump,
                 { ambient: .6, specularity: 0, texture: new Texture("/assets/building2.jpg") }),
             helicopter: new Material(new defs.Phong_Shader(),
-                { ambient: .5, diffusivity: .6, color: hex_color("#b51d09") }),
+                { ambient: .7, diffusivity: .6, color: hex_color("#b51d09") }),
             ground: new Material(new defs.Textured_Phong(), {
                 color: hex_color("#000000"), ambient: 1.0, texture: new Texture("assets/floor.jpeg", "NEAREST")}),
             sky: new Material(new defs.Phong_Shader(),
-                { ambient: .6, diffusivity: .5, specularity: 0, color: hex_color("#87CEEB") }),
+                { ambient: .8, diffusivity: .5, specularity: 0, color: hex_color("#87CEEB") }),
             window: new Material(new defs.Phong_Shader(),
                 { ambient: .1, diffusivity: .1, specularity: .9, color: hex_color("#91b8db") }),
             fuel: new Material(bump,
                 { ambient: .6, specularity: 0, texture: new Texture("/assets/fuel.png") }),
             sun: new Material(bump, 
-                { ambient: 1, diffusivity: 1, specularity: 1, texture: new Texture("/assets/lebron.jpg")}),
+                { ambient: 1, diffusivity: 1, specularity: 1, texture: new Texture("/assets/sun.png")}),
             gauge: new Material(bump,
                 { ambient: 0.9, specularity: 0, texture: new Texture("/assets/guage.png")})
         }
@@ -218,7 +218,7 @@ export class Takeoff extends Scene {
         this.shapes.ground.draw(context, program_state, ground_model_transform.times(Mat4.scale(400, 400, 400)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.ground);
 
         this.shapes.sphere.draw(context, program_state, sky_model_transform.times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI / 2, 1, 0, 0)), this.materials.sky);
-        this.shapes.circle.draw(context, program_state, sun_model_transform.times(Mat4.translation(0, 50, -180)).times(Mat4.scale(10, 10, 10)), this.materials.sun);
+        this.shapes.sphere.draw(context, program_state, sun_model_transform.times(Mat4.translation(0, 55, -150)).times(Mat4.scale(10, 10, 10)), this.materials.sun);
 
         //REFUEL STATION START
         this.refuel_station.forEach((index, value, set) => {
@@ -248,10 +248,9 @@ export class Takeoff extends Scene {
             Math.PI / 4, context.width / context.height, .1, 100000);
 
         // TODO: Lighting (Requirement 2)
-        const light_position = vec4(0, 100, 0, -10);
-        const still_light = vec4(-3, -6, -9, 2);
+        const sun_position = vec4(0, 55, -150, 1);
         // The parameters of the Light are: position, color, size
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000000), new Light(still_light, color(1, 1, 1, 1), 1000)];
+        program_state.lights = [new Light(sun_position, color(1, 1, 1, 1), 1000000)];
 
 
         const dt = program_state.animation_delta_time / 1000;
