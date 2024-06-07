@@ -75,7 +75,7 @@ export class Takeoff extends Scene {
             ground: new Material(new defs.Textured_Phong(), {
                 color: hex_color("#000000"), ambient: 1.0, texture: new Texture("assets/floor.jpeg", "NEAREST")}),
             sky: new Material(new defs.Phong_Shader(),
-                { ambient: .8, diffusivity: .5, specularity: 0, color: hex_color("#87CEEB") }),
+                { ambient: .9, diffusivity: .5, specularity: 0, color: hex_color("#87CEEB") }),
             window: new Material(new defs.Phong_Shader(),
                 { ambient: .1, diffusivity: .1, specularity: .9, color: hex_color("#91b8db") }),
             fuel: new Material(bump,
@@ -218,7 +218,7 @@ export class Takeoff extends Scene {
         this.shapes.ground.draw(context, program_state, ground_model_transform.times(Mat4.scale(400, 400, 400)).times(Mat4.rotation(Math.PI/2, 1, 0, 0)), this.materials.ground);
 
         this.shapes.sphere.draw(context, program_state, sky_model_transform.times(Mat4.scale(200, 200, 200)).times(Mat4.rotation(Math.PI / 2, 1, 0, 0)), this.materials.sky);
-        this.shapes.sphere.draw(context, program_state, sun_model_transform.times(Mat4.translation(0, 55, -170)).times(Mat4.scale(10, 10, 10)), this.materials.sun);
+        this.shapes.sphere.draw(context, program_state, sun_model_transform.times(Mat4.translation(0, 55, -160)).times(Mat4.scale(10, 10, 10)), this.materials.sun);
 
         //REFUEL STATION START
         this.refuel_station.forEach((index, value, set) => {
@@ -248,9 +248,9 @@ export class Takeoff extends Scene {
             Math.PI / 4, context.width / context.height, .1, 100000);
 
         // TODO: Lighting (Requirement 2)
-        const sun_position = vec4(0, 55, -170, 1);
+        const sun_position = vec4(0, 55, -160, 1);
         // The parameters of the Light are: position, color, size
-        program_state.lights = [new Light(sun_position, color(1, 1, 1, 1), 1000000)];
+        program_state.lights = [new Light(sun_position, color(1, 1, 1, 1), 10000000)];
 
 
         const dt = program_state.animation_delta_time / 1000;
