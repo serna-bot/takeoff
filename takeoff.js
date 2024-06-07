@@ -264,6 +264,8 @@ export class Takeoff extends Scene {
 
             const heli_tf = this.helicopter_physics.get_transform();
 
+
+
             if (!this?.shards) {
                 this.shards = [];
 
@@ -288,19 +290,22 @@ export class Takeoff extends Scene {
             }
 
             setTimeout(() => {
-                this.helicopter_physics.x = vec3(0, 2, 0);
                 death = false;
+                this.helicopter_physics.x = vec3(0, 2, 0);
                 this.shards = null;
-            }, 480);
+            }, 600);
         }
 
-        this.helicopter_physics.update(dt);
+        if (!death)
+            this.helicopter_physics.update(dt);
 
         const heli_transform = this.helicopter_physics.get_transform();
 
+        const wobble = death ? Math.sin(program_state.animation_time / 20) : 0;
+
         const target_cam_mat = Mat4.look_at(
             vec3(...heli_transform.times(vec4(0, 15, 40, 1))),
-            vec3(...heli_transform.times(vec4(0, 0, 0, 1))),
+            vec3(...heli_transform.times(vec4(0, wobble, 0, 1))),
             vec3(0, 1, 0));
 
         program_state.set_camera(target_cam_mat);
