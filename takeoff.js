@@ -88,6 +88,9 @@ export class Takeoff extends Scene {
             shard: new Material(new defs.Phong_Shader(), { ambient: 1, diffusivity: 1, specularity: 1, color: hex_color("#ff0000") }),
         }
 
+        this.tilt_lr = 0;
+        this.tilt_fb = 0;
+
         this.initial_camera_location = Mat4.look_at(vec3(0.5, 0, 50), vec3(0, 0, 0), vec3(0, 1, 0));
 
         this.buildings_model_transform = Array();
@@ -317,8 +320,11 @@ export class Takeoff extends Scene {
 
         //NOTE: HELI HAS 3 PARTS (BODY, WINDOW, ROTOR) WHICH SHOULD BE POSITIONED LIKE BELOW:
 
-        const tilt = Mat4.rotation(this.helicopter_physics.tilt_fb * Math.PI / 180 / 2, 1, 0, 0)
-            .times(Mat4.rotation(this.helicopter_physics.tilt_lr * Math.PI / 180 / 2, 0, 0, 1));
+        this.tilt_lr = (this.tilt_lr + this.helicopter_physics.tilt_lr) / 2;
+        this.tilt_fb = (this.tilt_fb + this.helicopter_physics.tilt_fb) / 2;
+
+        const tilt = Mat4.rotation(this.tilt_fb * Math.PI / 180 / 2, 1, 0, 0)
+            .times(Mat4.rotation(this.tilt_lr * Math.PI / 180 / 2, 0, 0, 1));
         
         let body_tf = heli_transform.times(tilt).times(Mat4.scale(3, 3, 3));
         this.shapes.helicopter_body.draw(context, program_state, body_tf, this.materials.helicopter);
