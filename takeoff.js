@@ -186,24 +186,15 @@ export class Takeoff extends Scene {
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("TAKEOFF!", ["Control", "0"], () => {
-            this.engine = true;
-            this.reset = true;
-        });
-        this.new_line();
-        this.key_triggered_button("STOP!", ["Control", "1"], () => {
-            this.engine = false;
-        });
-        this.new_line();
         this.key_triggered_button("SPIN", ["k"], () => { });
         this.key_triggered_button("FORWARD", ["w"], () => { });
         this.new_line();
-        this.key_triggered_button("LEFT", ["a"], () => { });
+        this.key_triggered_button("ROLL LEFT", ["a"], () => { });
         this.key_triggered_button("BACK", ["s"], () => { });
-        this.key_triggered_button("RIGHT", ["d"], () => { });
+        this.key_triggered_button("ROLL RIGHT", ["d"], () => { });
         this.new_line();
-        this.key_triggered_button("TURN LEFT", ["j"], () => { });
-        this.key_triggered_button("TURN RIGHT", ["l"], () => { });
+        this.key_triggered_button("ROTATE LEFT", ["j"], () => { });
+        this.key_triggered_button("ROTATE RIGHT", ["l"], () => { });
     }
 
     draw_env(context, program_state, model_transform) {
@@ -248,7 +239,7 @@ export class Takeoff extends Scene {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         if (!context.scratchpad.controls) {
-            this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
+            this.children.push(context.scratchpad.controls = new defs.Camera_Info());
             // Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(this.initial_camera_location);
         }
